@@ -7,14 +7,126 @@
     {
       "name": "virtualbox-ubunutu-16.04-systemd",
       "type": "virtualbox-iso",
-      "iso_url": "http://releases.ubuntu.com/16.04/ubuntu-16.04.2-server-amd64.iso",
-      "iso_checksum": "2bce60d18248df9980612619ff0b34e6",
+      "iso_url": "http://releases.ubuntu.com/16.04/ubuntu-16.04.2-server-i386.iso",
+      "iso_checksum": "c32ba78bf6bdae6627b1e717d33eb7ae",
       "iso_checksum_type": "md5",
-      "ssh_username": "packer",
-      "ssh_password": "packer",
+      "ssh_username": "vagrant",
+      "ssh_password": "vagrant",
       "ssh_timeout": "10m",
+      "guest_os_type": "Ubuntu_64",
+      "headless": "true",
+      "boot_command": [
+        "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "/install/vmlinuz<wait>",
+        " auto<wait>",
+        "service ssh start<wait>"
+      ],
+      "boot_wait": "10s",
+      "http_directory": "http",
       "shutdown_command": "echo 'packer' | sudo -S shutdown -P now"
-
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "shared/",
+      "destination": "/tmp"
+    },
+    {
+      "type": "file",
+      "source": "consul/",
+      "destination": "/tmp"
+    },
+    {
+      "type": "file",
+      "source": "nomad/",
+      "destination": "/tmp"
+    },
+    {
+      "type": "file",
+      "source": "vault/",
+      "destination": "/tmp"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "bash /tmp/shared/scripts/base.sh"
+      ]
+    },
+    {
+      "type": "shell",
+      "environment_vars": [
+        "USER=consul",
+        "GROUP=consul",
+        "COMMENT=Consul",
+        "HOME=/srv/consul"
+      ],
+      "inline": [
+        "bash /tmp/shared/scripts/setup-user.sh"
+      ]
+    },
+    {
+      "type": "shell",
+      "environment_vars": [
+        "VERSION={{ user `consul_version` }}",
+        "URL={{ user `consul_ent_url` }}"
+      ],
+      "inline": [
+        "bash /tmp/consul/scripts/install-consul.sh"
+      ]
+    },
+    {
+      "type": "shell",
+      "environment_vars": [
+        "VERSION={{ user `nomad_version` }}",
+        "URL={{ user `nomad_ent_url` }}"
+      ],
+      "inline": [
+        "bash /tmp/nomad/scripts/install-nomad.sh"
+      ]
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "bash /tmp/nomad/scripts/install-oracle-jdk.sh"
+      ]
+    },
+    {
+      "type": "shell",
+      "environment_vars": [
+        "USER=vault",
+        "GROUP=vault",
+        "COMMENT=Vault",
+        "HOME=/srv/vault"
+      ],
+      "inline": [
+        "bash /tmp/shared/scripts/setup-user.sh"
+      ]
+    },
+    {
+      "type": "shell",
+      "environment_vars": [
+        "VERSION={{ user `vault_version` }}",
+        "URL={{ user `vault_ent_url` }}"
+      ],
+      "inline": [
+        "bash /tmp/vault/scripts/install-vault.sh"
+      ]
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "cd /tmp/shared/scripts && bash setup-testing.sh"
+      ]
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "bash /tmp/shared/scripts/cleanup.sh"
+      ]
     }
   ],
     "post-processors": [
@@ -25,7 +137,7 @@
         },
         {
           "type": "vagrant-cloud",
-          "box_tag": "cgriggs01/test_box",
+          "box_tag": "cgriggs/test_box",
           "access_token": "{{ user `cloud_token`}}",
           "version": "{{ user `version`}}"
         }
