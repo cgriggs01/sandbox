@@ -25,7 +25,7 @@
         },
         {
           "type": "vagrant-cloud",
-          "box_tag": "cgriggs/test_box",
+          "box_tag": "cgriggs01/test_box",
           "access_token": "{{ user `cloud_token`}}",
           "version": "{{ user `version`}}"
         }
