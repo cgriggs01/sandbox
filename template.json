@@ -1,0 +1,34 @@
+{
+  "variables": {
+    "cloud_token": "{{env `VAGRANT_CLOUD_TOKEN`}}",
+    "version": "1.0.{{timestamp}}"
+  },
+  "builders": [
+    {
+      "name": "virtualbox-ubunutu-16.04-systemd",
+      "type": "virtualbox-iso",
+      "iso_url": "http://releases.ubuntu.com/16.04/ubuntu-16.04.2-server-amd64.iso",
+      "iso_checksum": "2bce60d18248df9980612619ff0b34e6",
+      "iso_checksum_type": "md5",
+      "ssh_username": "packer",
+      "ssh_password": "packer",
+      "ssh_timeout": "10m",
+      "shutdown_command": "echo 'packer' | sudo -S shutdown -P now"
+
+    }
+  ],
+    "post-processors": [
+      [
+        {
+          "type": "vagrant",
+          "output": "proxycore_{{.Provider}}.box"
+        },
+        {
+          "type": "vagrant-cloud",
+          "box_tag": "cgriggs/test_box",
+          "access_token": "{{ user `cloud_token`}}",
+          "version": "{{ user `version`}}"
+        }
+      ]
+    ]
+}
